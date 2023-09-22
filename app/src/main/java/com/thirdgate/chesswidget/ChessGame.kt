@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 
 enum class ChessPiece(val charRepresentation: Char) {
@@ -121,6 +122,7 @@ fun ChessBoard(board: Array<Array<ChessCell>>, selectedCell: Pair<Int, Int>?, on
                             .border(2.dp, if (selectedCell == Pair(rowIndex, colIndex)) Color.Red else Color.Transparent)
                             .clickable { onCellClick(rowIndex, colIndex) },
                     ) {
+                        Column() {
                         if (cell.piece != ChessPiece.NONE) {
                             Text(
                                 text = cell.piece.charRepresentation.toString(),
@@ -128,6 +130,13 @@ fun ChessBoard(board: Array<Array<ChessCell>>, selectedCell: Pair<Int, Int>?, on
                                 style = TextStyle(fontSize = 18.sp)
                             )
                         }
+                        // Testing only
+                        Text(
+                            text = "$rowIndex,$colIndex",
+                            color = if (cell.color == PlayerColor.WHITE) Color.Black else Color.White,
+                            style = TextStyle(fontSize = 18.sp, textAlign = TextAlign.End),
+                        )
+                    }
                     }
                 }
             }
@@ -138,6 +147,11 @@ fun ChessBoard(board: Array<Array<ChessCell>>, selectedCell: Pair<Int, Int>?, on
 fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean {
     val piece = board[fromRow][fromCol].piece
     val color = board[fromRow][fromCol].color
+    val enemyColor = when (color) {
+        PlayerColor.WHITE -> PlayerColor.BLACK
+        PlayerColor.BLACK -> PlayerColor.WHITE
+        else -> PlayerColor.NONE
+    }
 
     // Helper function to check if the path is free for sliding pieces.
     fun isPathFree(startRow: Int, startCol: Int, endRow: Int, endCol: Int, rowStep: Int, colStep: Int): Boolean {
@@ -215,17 +229,41 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
                 if (color == PlayerColor.WHITE) {
                     if (fromRow == 7) { // Assuming 0-based indexing and that 7 is the back rank for white
                         if (toCol - fromCol == 2) {  // Kingside castling
+                            Log.i("Game", "Kingside castling")
                             // Assuming some function or property hasMoved to check if a piece has moved
                             if (!board[7][4].hasMoved && !board[7][7].hasMoved && board[7][5].piece == ChessPiece.NONE && board[7][6].piece == ChessPiece.NONE) {
+                                Log.i("Game", "Kingside castling check passed")
                                 // Check if the squares king moves across and to are safe
-                                // You'd need to implement isSquareAttacked
-                                if (!isSquareAttacked(board, row=7, col=4, byColor = color) && !isSquareAttacked(board, row=7, col=5, byColor=color) && !isSquareAttacked(board, row=7, col=6, byColor=color)) {
+                                if (!isSquareAttacked(board, row=7, col=4, byColor = enemyColor) && !isSquareAttacked(board, row=7, col=5, byColor=enemyColor) && !isSquareAttacked(board, row=7, col=6, byColor=enemyColor)) {
+                                    Log.i("Game", "Kingside castling OK, move rook")
+                                    board[7][5] = board[7][7]
+                                    board[7][7] = ChessCell(ChessPiece.NONE, PlayerColor.NONE, hasMoved = true)
                                     return true
                                 }
+                                Log.i("Game", "Kingside castling is attacked")
                             }
                         } else if (fromCol - toCol == 2) {  // Queenside castling
+                            Log.i("Game", "queenside castling")
                             if (!board[7][4].hasMoved && !board[7][0].hasMoved && board[7][1].piece == ChessPiece.NONE && board[7][2].piece == ChessPiece.NONE && board[7][3].piece == ChessPiece.NONE) {
-                                if (!isSquareAttacked(board, row=7, col=4, byColor = color) && !isSquareAttacked(board, row=7, col=3, byColor=color) && !isSquareAttacked(board, row=7, col=2, byColor=color)) {
+                                if (!isSquareAttacked(
+                                        board,
+                                        row = 7,
+                                        col = 4,
+                                        byColor = enemyColor
+                                    ) && !isSquareAttacked(
+                                        board,
+                                        row = 7,
+                                        col = 3,
+                                        byColor = enemyColor
+                                    ) && !isSquareAttacked(
+                                        board,
+                                        row = 7,
+                                        col = 2,
+                                        byColor = enemyColor
+                                    )
+                                ) {
+                                    board[7][3] = board[7][0]
+                                    board[7][0] = ChessCell(ChessPiece.NONE, PlayerColor.NONE, hasMoved = true)
                                     return true
                                 }
                             }
@@ -244,17 +282,14 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
 }
 
 fun isSquareAttacked(board: Array<Array<ChessCell>>, row: Int, col: Int, byColor: PlayerColor): Boolean {
-    for (i in board.indices) {
-        for (j in board[i].indices) {
-            if (board[i][j].color == byColor) {
+    for (fromRow in board.indices) {
+        for (fromCol in board[fromRow].indices) {
+            if (board[fromRow][fromCol].color == byColor) {
                 // Pretend to make the move
-                val originalPiece = board[row][col].piece
-                val originalColor = board[row][col].color
-                if (isValidMove(board, i, j, row, col)) {
-                    // Restore the board
+                if (isValidMove(board, fromRow, fromCol, row, col)) {
+                    Log.i("Game","isSquareAttacked: True $fromRow,$fromCol")
                     return true
                 }
-                // Restore the board
             }
         }
     }
@@ -263,7 +298,6 @@ fun isSquareAttacked(board: Array<Array<ChessCell>>, row: Int, col: Int, byColor
 
 @Composable
 fun ResetButton(onClick: () -> Unit) {
-    androidx.compose.material3.Button(onClick = onClick) {
-        Text("Reset")
+    androidx.compose.material3.Button(onClick = onClick) { Text("Reset")
     }
 }
