@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,41 +28,41 @@ enum class ChessPiece(val charRepresentation: Char) {
 }
 
 
-enum class PlayerColor {
+enum class PieceColor {
     NONE, WHITE, BLACK
 }
-data class ChessCell(val piece: ChessPiece, val color: PlayerColor, var hasMoved:Boolean=false)
+data class ChessCell(val piece: ChessPiece, val color: PieceColor, var hasMoved:Boolean=false)
 
 fun initialChessBoard(): Array<Array<ChessCell>> {
-    val board = Array(8) { Array(8) { ChessCell(ChessPiece.NONE, PlayerColor.NONE) } }
+    val board = Array(8) { Array(8) { ChessCell(ChessPiece.NONE, PieceColor.NONE) } }
 
     // Black 0
-    board[0][0] = ChessCell(ChessPiece.ROOK, PlayerColor.BLACK)
-    board[0][1] = ChessCell(ChessPiece.KNIGHT, PlayerColor.BLACK)
-    board[0][2] = ChessCell(ChessPiece.BISHOP, PlayerColor.BLACK)
-    board[0][3] = ChessCell(ChessPiece.QUEEN, PlayerColor.BLACK)
-    board[0][4] = ChessCell(ChessPiece.KING, PlayerColor.BLACK)
-    board[0][5] = ChessCell(ChessPiece.BISHOP, PlayerColor.BLACK)
-    board[0][6] = ChessCell(ChessPiece.KNIGHT, PlayerColor.BLACK)
-    board[0][7] = ChessCell(ChessPiece.ROOK, PlayerColor.BLACK)
+    board[0][0] = ChessCell(ChessPiece.ROOK, PieceColor.BLACK)
+    board[0][1] = ChessCell(ChessPiece.KNIGHT, PieceColor.BLACK)
+    board[0][2] = ChessCell(ChessPiece.BISHOP, PieceColor.BLACK)
+    board[0][3] = ChessCell(ChessPiece.QUEEN, PieceColor.BLACK)
+    board[0][4] = ChessCell(ChessPiece.KING, PieceColor.BLACK)
+    board[0][5] = ChessCell(ChessPiece.BISHOP, PieceColor.BLACK)
+    board[0][6] = ChessCell(ChessPiece.KNIGHT, PieceColor.BLACK)
+    board[0][7] = ChessCell(ChessPiece.ROOK, PieceColor.BLACK)
     // Black pawns 1
     for (i in 0..7) {
-        board[1][i] = ChessCell(ChessPiece.PAWN, PlayerColor.BLACK)
+        board[1][i] = ChessCell(ChessPiece.PAWN, PieceColor.BLACK)
     }
 
     // White pawns 6
     for (i in 0..7) {
-        board[6][i] = ChessCell(ChessPiece.PAWN, PlayerColor.WHITE)
+        board[6][i] = ChessCell(ChessPiece.PAWN, PieceColor.WHITE)
     }
     // White 7
-    board[7][0] = ChessCell(ChessPiece.ROOK, PlayerColor.WHITE)
-    board[7][1] = ChessCell(ChessPiece.KNIGHT, PlayerColor.WHITE)
-    board[7][2] = ChessCell(ChessPiece.BISHOP, PlayerColor.WHITE)
-    board[7][3] = ChessCell(ChessPiece.QUEEN, PlayerColor.WHITE)
-    board[7][4] = ChessCell(ChessPiece.KING, PlayerColor.WHITE)
-    board[7][5] = ChessCell(ChessPiece.BISHOP, PlayerColor.WHITE)
-    board[7][6] = ChessCell(ChessPiece.KNIGHT, PlayerColor.WHITE)
-    board[7][7] = ChessCell(ChessPiece.ROOK, PlayerColor.WHITE)
+    board[7][0] = ChessCell(ChessPiece.ROOK, PieceColor.WHITE)
+    board[7][1] = ChessCell(ChessPiece.KNIGHT, PieceColor.WHITE)
+    board[7][2] = ChessCell(ChessPiece.BISHOP, PieceColor.WHITE)
+    board[7][3] = ChessCell(ChessPiece.QUEEN, PieceColor.WHITE)
+    board[7][4] = ChessCell(ChessPiece.KING, PieceColor.WHITE)
+    board[7][5] = ChessCell(ChessPiece.BISHOP, PieceColor.WHITE)
+    board[7][6] = ChessCell(ChessPiece.KNIGHT, PieceColor.WHITE)
+    board[7][7] = ChessCell(ChessPiece.ROOK, PieceColor.WHITE)
 
     return board
 }
@@ -102,14 +101,14 @@ fun ChessGame() {
                             board.value[row][col] = it.copy()
                             board.value[row][col].hasMoved = true  // Mark piece as moved
                             board.value[currentSelected.first][currentSelected.second] =
-                                ChessCell(ChessPiece.NONE, PlayerColor.NONE)
+                                ChessCell(ChessPiece.NONE, PieceColor.NONE)
                         }
                     }
                     selectedCell.value = null // clear selection
                     // Delay computer move
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(500)  // Wait for half a second
-                        val bestMove = bestMove(board.value, PlayerColor.BLACK)
+                        val bestMove = bestMove(board.value, PieceColor.BLACK)
                         if (bestMove != null) {
                             applyMove(board.value, bestMove)
                             val updatedBoard = board.value.deepCopy()  // Create a deep copy
@@ -125,15 +124,15 @@ fun ChessGame() {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        if (isKingInCheck(board.value, PlayerColor.WHITE)) {
-            if (isCheckmate(board.value, PlayerColor.WHITE)) {
+        if (isKingInCheck(board.value, PieceColor.WHITE)) {
+            if (isCheckmate(board.value, PieceColor.WHITE)) {
                 Text("White is in checkmate!")
             } else {
                 Text("White is in check!")
             }
             isGameOver = true
-        } else if (isKingInCheck(board.value, PlayerColor.BLACK)) {
-            if (isCheckmate(board.value, PlayerColor.BLACK)) {
+        } else if (isKingInCheck(board.value, PieceColor.BLACK)) {
+            if (isCheckmate(board.value, PieceColor.BLACK)) {
                 Text("Black is in checkmate!")
             } else {
                 Text("Black is in check!")
@@ -151,7 +150,7 @@ fun ChessGame() {
 
 const val MAX_DEPTH = 3 // You can adjust this value
 
-fun minimax(board: Array<Array<ChessCell>>, depth: Int, isMaximizing: Boolean, alpha: Int, beta: Int, color: PlayerColor): Int {
+fun minimax(board: Array<Array<ChessCell>>, depth: Int, isMaximizing: Boolean, alpha: Int, beta: Int, color: PieceColor): Int {
     if (depth == 0) {
         return evaluateBoard(board)
     }
@@ -165,7 +164,7 @@ fun minimax(board: Array<Array<ChessCell>>, depth: Int, isMaximizing: Boolean, a
         for (move in generatePossibleMoves(board, color)) {
             val copyBoard = board.deepCopy()
             applyMove(copyBoard, move)
-            val score = minimax(copyBoard, depth - 1, false, currentAlpha, currentBeta, PlayerColor.BLACK)
+            val score = minimax(copyBoard, depth - 1, false, currentAlpha, currentBeta, PieceColor.BLACK)
             bestScore = maxOf(bestScore, score)
             currentAlpha = maxOf(currentAlpha, score)
             if (currentBeta <= currentAlpha) break
@@ -175,7 +174,7 @@ fun minimax(board: Array<Array<ChessCell>>, depth: Int, isMaximizing: Boolean, a
         for (move in generatePossibleMoves(board, color)) {
             val copyBoard = board.deepCopy()
             applyMove(copyBoard, move)
-            val score = minimax(copyBoard, depth - 1, true, currentAlpha, currentBeta, PlayerColor.WHITE)
+            val score = minimax(copyBoard, depth - 1, true, currentAlpha, currentBeta, PieceColor.WHITE)
             bestScore = minOf(bestScore, score)
             currentBeta = minOf(currentBeta, score)
             if (currentBeta <= currentAlpha) break
@@ -184,7 +183,7 @@ fun minimax(board: Array<Array<ChessCell>>, depth: Int, isMaximizing: Boolean, a
     return bestScore
 }
 
-fun isKingInCheck(board: Array<Array<ChessCell>>, color: PlayerColor): Boolean {
+fun isKingInCheck(board: Array<Array<ChessCell>>, color: PieceColor): Boolean {
     var kingRow = -1
     var kingCol = -1
     for (i in board.indices) {
@@ -196,18 +195,18 @@ fun isKingInCheck(board: Array<Array<ChessCell>>, color: PlayerColor): Boolean {
             }
         }
     }
-    val enemyColor = if (color == PlayerColor.WHITE) PlayerColor.BLACK else PlayerColor.WHITE
+    val enemyColor = if (color == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
     return isSquareAttacked(board, kingRow, kingCol, enemyColor)
 }
 
-fun bestMove(board: Array<Array<ChessCell>>, color: PlayerColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+fun bestMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
     var bestScore = Int.MIN_VALUE
     var move: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
 
     for (possibleMove in generatePossibleMoves(board, color)) {
         val copyBoard = board.deepCopy()
         applyMove(copyBoard, possibleMove)
-        val score = minimax(copyBoard, MAX_DEPTH, false, Int.MIN_VALUE, Int.MAX_VALUE, PlayerColor.BLACK)
+        val score = minimax(copyBoard, MAX_DEPTH, false, Int.MIN_VALUE, Int.MAX_VALUE, PieceColor.BLACK)
         if (score > bestScore) {
             bestScore = score
             move = possibleMove
@@ -219,7 +218,7 @@ fun bestMove(board: Array<Array<ChessCell>>, color: PlayerColor): Pair<Pair<Int,
 fun applyMove(board: Array<Array<ChessCell>>, move: Pair<Pair<Int, Int>, Pair<Int, Int>>) {
     val (from, to) = move
     board[to.first][to.second] = board[from.first][from.second].copy(hasMoved = true)
-    board[from.first][from.second] = ChessCell(ChessPiece.NONE, PlayerColor.NONE)
+    board[from.first][from.second] = ChessCell(ChessPiece.NONE, PieceColor.NONE)
 }
 
 fun Array<Array<ChessCell>>.deepCopy(): Array<Array<ChessCell>> {
@@ -232,11 +231,11 @@ fun evaluateBoard(board: Array<Array<ChessCell>>): Int {
     for (row in board) {
         for (cell in row) {
             score += when (cell.piece) {
-                ChessPiece.PAWN -> if (cell.color == PlayerColor.WHITE) 10 else -10
-                ChessPiece.KNIGHT, ChessPiece.BISHOP -> if (cell.color == PlayerColor.WHITE) 30 else -30
-                ChessPiece.ROOK -> if (cell.color == PlayerColor.WHITE) 50 else -50
-                ChessPiece.QUEEN -> if (cell.color == PlayerColor.WHITE) 90 else -90
-                ChessPiece.KING -> if (cell.color == PlayerColor.WHITE) 900 else -900
+                ChessPiece.PAWN -> if (cell.color == PieceColor.WHITE) 10 else -10
+                ChessPiece.KNIGHT, ChessPiece.BISHOP -> if (cell.color == PieceColor.WHITE) 30 else -30
+                ChessPiece.ROOK -> if (cell.color == PieceColor.WHITE) 50 else -50
+                ChessPiece.QUEEN -> if (cell.color == PieceColor.WHITE) 90 else -90
+                ChessPiece.KING -> if (cell.color == PieceColor.WHITE) 900 else -900
                 else -> 0
             }
         }
@@ -249,7 +248,7 @@ fun evaluateBoard(board: Array<Array<ChessCell>>): Int {
 
 
 
-fun generatePossibleMoves(board: Array<Array<ChessCell>>, color: PlayerColor): List<Pair<Pair<Int, Int>, Pair<Int, Int>>> {
+fun generatePossibleMoves(board: Array<Array<ChessCell>>, color: PieceColor): List<Pair<Pair<Int, Int>, Pair<Int, Int>>> {
     val possibleMoves = mutableListOf<Pair<Pair<Int, Int>, Pair<Int, Int>>>()
     for (fromRow in board.indices) {
         for (fromCol in board[fromRow].indices) {
@@ -289,7 +288,7 @@ fun ChessBoard(board: Array<Array<ChessCell>>, selectedCell: Pair<Int, Int>?, ch
                                 Text(
                                     text = cell.piece.charRepresentation.toString(),
                                     fontFamily = chessFont,
-                                    color = if (cell.color == PlayerColor.WHITE) Color.Black else Color.White,
+                                    color = if (cell.color == PieceColor.WHITE) Color.Black else Color.White,
                                     style = TextStyle(fontSize = 35.sp)
                                 )
                             } else {
@@ -308,7 +307,7 @@ fun ChessBoard(board: Array<Array<ChessCell>>, selectedCell: Pair<Int, Int>?, ch
     }
 }
 
-fun isCheckmate(board: Array<Array<ChessCell>>, color: PlayerColor): Boolean {
+fun isCheckmate(board: Array<Array<ChessCell>>, color: PieceColor): Boolean {
     if (!isKingInCheck(board, color)) return false
 
     val possibleMoves = generatePossibleMoves(board, color)
@@ -345,9 +344,9 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
     val piece = board[fromRow][fromCol].piece
     val color = board[fromRow][fromCol].color
     val enemyColor = when (color) {
-        PlayerColor.WHITE -> PlayerColor.BLACK
-        PlayerColor.BLACK -> PlayerColor.WHITE
-        else -> PlayerColor.NONE
+        PieceColor.WHITE -> PieceColor.BLACK
+        PieceColor.BLACK -> PieceColor.WHITE
+        else -> PieceColor.NONE
     }
 
     // Helper function to check if the path is free for sliding pieces.
@@ -369,24 +368,24 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
 
     when (piece) {
         ChessPiece.PAWN -> {
-            if (color == PlayerColor.WHITE) {
+            if (color == PieceColor.WHITE) {
                 if (fromCol == toCol && board[toRow][toCol].piece == ChessPiece.NONE) {
                     if (toRow - fromRow == -1) {
                         return true
                     } else if (fromRow == 6 && toRow - fromRow == -2 && board[toRow + 1][toCol].piece == ChessPiece.NONE) {  // Added condition for 2-space move
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PlayerColor.BLACK && toRow - fromRow == -1) {
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.BLACK && toRow - fromRow == -1) {
                     return true
                 }
-            } else if (color == PlayerColor.BLACK) {
+            } else if (color == PieceColor.BLACK) {
                 if (fromCol == toCol && board[toRow][toCol].piece == ChessPiece.NONE) {
                     if (toRow - fromRow == 1) {
                         return true
                     } else if (fromRow == 1 && toRow - fromRow == 2 && board[toRow - 1][toCol].piece == ChessPiece.NONE) {  // Added condition for 2-space move
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PlayerColor.WHITE && toRow - fromRow == 1) {
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.WHITE && toRow - fromRow == 1) {
                     return true
                 }
             }
@@ -423,7 +422,7 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
             if (Math.abs(fromRow - toRow) <= 1 && Math.abs(fromCol - toCol) <= 1) {
                 return true
             } else if (fromRow == toRow) { // Same row, which is a condition for castling
-                if (color == PlayerColor.WHITE) {
+                if (color == PieceColor.WHITE) {
                     if (fromRow == 7) { // Assuming 0-based indexing and that 7 is the back rank for white
                         if (toCol - fromCol == 2) {  // Kingside castling
                             Log.i("Game", "Kingside castling")
@@ -434,7 +433,7 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
                                 if (!isSquareAttacked(board, row=7, col=4, byColor = enemyColor) && !isSquareAttacked(board, row=7, col=5, byColor=enemyColor) && !isSquareAttacked(board, row=7, col=6, byColor=enemyColor)) {
                                     Log.i("Game", "Kingside castling OK, move rook")
                                     board[7][5] = board[7][7]
-                                    board[7][7] = ChessCell(ChessPiece.NONE, PlayerColor.NONE, hasMoved = true)
+                                    board[7][7] = ChessCell(ChessPiece.NONE, PieceColor.NONE, hasMoved = true)
                                     return true
                                 }
                                 Log.i("Game", "Kingside castling is attacked")
@@ -460,13 +459,13 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
                                     )
                                 ) {
                                     board[7][3] = board[7][0]
-                                    board[7][0] = ChessCell(ChessPiece.NONE, PlayerColor.NONE, hasMoved = true)
+                                    board[7][0] = ChessCell(ChessPiece.NONE, PieceColor.NONE, hasMoved = true)
                                     return true
                                 }
                             }
                         }
                     }
-                } else if (color == PlayerColor.BLACK) {
+                } else if (color == PieceColor.BLACK) {
                     // Similar logic for the black king; assuming row 0 is the back rank for black
                     // You'd need to adjust accordingly
                 }
@@ -478,7 +477,7 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
     return false
 }
 
-fun isSquareAttacked(board: Array<Array<ChessCell>>, row: Int, col: Int, byColor: PlayerColor): Boolean {
+fun isSquareAttacked(board: Array<Array<ChessCell>>, row: Int, col: Int, byColor: PieceColor): Boolean {
     for (fromRow in board.indices) {
         for (fromCol in board[fromRow].indices) {
             if (board[fromRow][fromCol].color == byColor) {
