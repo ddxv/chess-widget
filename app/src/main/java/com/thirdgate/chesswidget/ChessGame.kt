@@ -18,6 +18,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
+import androidx.glance.text.TextAlign
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -33,42 +34,67 @@ enum class PieceColor {
 }
 data class ChessCell(val piece: ChessPiece, val color: PieceColor, var hasMoved:Boolean=false)
 
+
+// Top-level variable
+var currentPlayerColor: PieceColor = PieceColor.NONE
+
 fun initialChessBoard(): Array<Array<ChessCell>> {
+
+    // 0, 1
+    // 1, 1
     val board = Array(8) { Array(8) { ChessCell(ChessPiece.NONE, PieceColor.NONE) } }
 
-    // Black 0
-    board[0][0] = ChessCell(ChessPiece.ROOK, PieceColor.BLACK)
-    board[0][1] = ChessCell(ChessPiece.KNIGHT, PieceColor.BLACK)
-    board[0][2] = ChessCell(ChessPiece.BISHOP, PieceColor.BLACK)
-    board[0][3] = ChessCell(ChessPiece.QUEEN, PieceColor.BLACK)
-    board[0][4] = ChessCell(ChessPiece.KING, PieceColor.BLACK)
-    board[0][5] = ChessCell(ChessPiece.BISHOP, PieceColor.BLACK)
-    board[0][6] = ChessCell(ChessPiece.KNIGHT, PieceColor.BLACK)
-    board[0][7] = ChessCell(ChessPiece.ROOK, PieceColor.BLACK)
-    // Black pawns 1
-    for (i in 0..7) {
-        board[1][i] = ChessCell(ChessPiece.PAWN, PieceColor.BLACK)
+    //Player will always start at Row 7
+    val opponentColor: PieceColor
+    val kingCol: Int
+    val queenCol: Int
+    if (currentPlayerColor == PieceColor.WHITE){
+        opponentColor = PieceColor.BLACK
+        kingCol = 4
+        queenCol = 3
+        Log.i("Game","Color BLACK=${opponentColor} ")
+    }
+    else {
+        opponentColor = PieceColor.WHITE
+        kingCol = 3
+        queenCol = 4
+        Log.i("Game","Color WHITE=${opponentColor} ")
     }
 
-    // White pawns 6
+    // 0,0 Top Left of board
+    board[0][0] = ChessCell(ChessPiece.KNIGHT, opponentColor)
+    board[0][1] = ChessCell(ChessPiece.KNIGHT, opponentColor)
+    board[0][2] = ChessCell(ChessPiece.BISHOP, opponentColor)
+    board[0][queenCol] = ChessCell(ChessPiece.QUEEN, opponentColor)
+    board[0][kingCol] = ChessCell(ChessPiece.KING, opponentColor)
+    board[0][5] = ChessCell(ChessPiece.BISHOP, opponentColor)
+    board[0][6] = ChessCell(ChessPiece.KNIGHT, opponentColor)
+    board[0][7] = ChessCell(ChessPiece.ROOK, opponentColor)
+    // White pawns 1
     for (i in 0..7) {
-        board[6][i] = ChessCell(ChessPiece.PAWN, PieceColor.WHITE)
+        board[1][i] = ChessCell(ChessPiece.PAWN, opponentColor)
     }
-    // White 7
-    board[7][0] = ChessCell(ChessPiece.ROOK, PieceColor.WHITE)
-    board[7][1] = ChessCell(ChessPiece.KNIGHT, PieceColor.WHITE)
-    board[7][2] = ChessCell(ChessPiece.BISHOP, PieceColor.WHITE)
-    board[7][3] = ChessCell(ChessPiece.QUEEN, PieceColor.WHITE)
-    board[7][4] = ChessCell(ChessPiece.KING, PieceColor.WHITE)
-    board[7][5] = ChessCell(ChessPiece.BISHOP, PieceColor.WHITE)
-    board[7][6] = ChessCell(ChessPiece.KNIGHT, PieceColor.WHITE)
-    board[7][7] = ChessCell(ChessPiece.ROOK, PieceColor.WHITE)
+
+    // Black pawns 6
+    for (i in 0..7) {
+        board[6][i] = ChessCell(ChessPiece.PAWN, currentPlayerColor)
+    }
+    // Black 7
+    board[7][0] = ChessCell(ChessPiece.ROOK, currentPlayerColor)
+    board[7][1] = ChessCell(ChessPiece.KNIGHT, currentPlayerColor)
+    board[7][2] = ChessCell(ChessPiece.BISHOP, currentPlayerColor)
+    board[7][queenCol] = ChessCell(ChessPiece.QUEEN, currentPlayerColor)
+    board[7][kingCol] = ChessCell(ChessPiece.KING, currentPlayerColor)
+    board[7][5] = ChessCell(ChessPiece.BISHOP, currentPlayerColor)
+    board[7][6] = ChessCell(ChessPiece.KNIGHT, currentPlayerColor)
+    board[7][7] = ChessCell(ChessPiece.ROOK, currentPlayerColor)
 
     return board
 }
 
 @Composable
-fun ChessGame() {
+fun ChessGame(playerColor:PieceColor) {
+    currentPlayerColor = playerColor
     val board = remember { mutableStateOf(initialChessBoard()) }
     val selectedCell = remember { mutableStateOf<Pair<Int, Int>?>(null) }
     val chessFont = FontFamily(
@@ -288,16 +314,16 @@ fun ChessBoard(board: Array<Array<ChessCell>>, selectedCell: Pair<Int, Int>?, ch
                                 Text(
                                     text = cell.piece.charRepresentation.toString(),
                                     fontFamily = chessFont,
-                                    color = if (cell.color == PieceColor.WHITE) Color.Black else Color.White,
+                                    color = if (cell.color == PieceColor.WHITE) Color.White else Color.Black,
                                     style = TextStyle(fontSize = 35.sp)
                                 )
                             } else {
                                 // Testing only
-//                                Text(
-//                                    text = "$rowIndex,$colIndex",
-//                                    color = if (cell.color == PlayerColor.WHITE) Color.Black else Color.White,
-//                                    style = TextStyle(fontSize = 18.sp, textAlign = TextAlign.End),
-//                                )
+                                Text(
+                                    text = "$rowIndex,$colIndex",
+                                    color = if (cell.color == PieceColor.WHITE) Color.Black else Color.White,
+                                    style = TextStyle(fontSize = 18.sp),
+                                )
                             }
                         }
                     }
@@ -365,27 +391,28 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
 
     // Can't move to a cell occupied by a piece of the same color.
     if (board[toRow][toCol].color == color) return false
-
     when (piece) {
         ChessPiece.PAWN -> {
-            if (color == PieceColor.WHITE) {
+            // Pawn from top
+            if (color != currentPlayerColor) {
                 if (fromCol == toCol && board[toRow][toCol].piece == ChessPiece.NONE) {
-                    if (toRow - fromRow == -1) {
+                    if (toRow - fromRow == 1) { // Change here
                         return true
-                    } else if (fromRow == 6 && toRow - fromRow == -2 && board[toRow + 1][toCol].piece == ChessPiece.NONE) {  // Added condition for 2-space move
+                    } else if (fromRow == 1 && toRow - fromRow == 2 && board[toRow - 1][toCol].piece == ChessPiece.NONE) {
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.BLACK && toRow - fromRow == -1) {
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.BLACK && toRow - fromRow == 1) { // Change here
                     return true
                 }
-            } else if (color == PieceColor.BLACK) {
+            // Pawn from bottom
+            } else if (color == currentPlayerColor) {
                 if (fromCol == toCol && board[toRow][toCol].piece == ChessPiece.NONE) {
-                    if (toRow - fromRow == 1) {
+                    if (toRow - fromRow == -1) { // Change here
                         return true
-                    } else if (fromRow == 1 && toRow - fromRow == 2 && board[toRow - 1][toCol].piece == ChessPiece.NONE) {  // Added condition for 2-space move
+                    } else if (fromRow == 6 && toRow - fromRow == -2 && board[toRow + 1][toCol].piece == ChessPiece.NONE) {
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.WHITE && toRow - fromRow == 1) {
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.WHITE && toRow - fromRow == -1) { // Change here
                     return true
                 }
             }

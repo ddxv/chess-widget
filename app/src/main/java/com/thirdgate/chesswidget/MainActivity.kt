@@ -89,7 +89,7 @@ var showMenu by remember { mutableStateOf(false) }
         Text(
             text = "Hello, this is a simple Chess game. The game comes with a free widget. Enjoy!", modifier=Modifier.padding(20.dp)
         )
-        ChessGame()
+        ChessGame(playerColor = PieceColor.WHITE)
     }
 }
 
