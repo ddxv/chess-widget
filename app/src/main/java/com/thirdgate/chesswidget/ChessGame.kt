@@ -178,9 +178,9 @@ fun ChessGame(playerColor:PieceColor) {
     }
 }
 
-const val MAX_DEPTH = 0 // You can adjust this value
+const val MAX_DEPTH = 2 // You can adjust this value
 
-fun negaMax(board: Array<Array<ChessCell>>, depth: Int, color: PieceColor): Int {
+fun negaMax(board: Array<Array<ChessCell>>, depth: Int, color: PieceColor, firstMove:Pair<Pair<Int, Int>, Pair<Int, Int>>): Int {
 //    if ( depth == 0 ) return evaluate();
 //    int max = -oo;
 //    for ( all moves)  {
@@ -196,12 +196,13 @@ fun negaMax(board: Array<Array<ChessCell>>, depth: Int, color: PieceColor): Int 
 
     var max = Int.MIN_VALUE
     for (move in generatePossibleMoves(board, color)) {
-        Log.i("Game", "NegaMax: move=$move")
+        Log.i("Game", "fM=$firstMove NegaMax: move=$move")
         val copyBoard = board.deepCopy()
         applyMove(copyBoard, move)
-        val score = -negaMax(copyBoard, depth = depth - 1, color = color)
-        Log.i("Game", "NegaMax: move=$move score=$score")
-        if (score > max){
+        val nextColor = if (color == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
+        val score = -negaMax(copyBoard, depth = depth - 1, color = nextColor, firstMove)
+        Log.i("Game", "fM=$firstMove NegaMax: move=$move score=$score")
+        if (score > max) {
             max = score
         }
     }
@@ -230,17 +231,16 @@ fun calculateBestMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<P
     var bestMove: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
 
     Log.i("Game", "bestScore=$bestScore, start $color")
-
     for (possibleMove in generatePossibleMoves(board, color)) {
-        Log.i("Game", "bestScore=$bestScore, $color pM=$possibleMove")
+        Log.i("Game", "fM=$possibleMove bestScore=$bestScore, $color")
         val copyBoard = board.deepCopy()
         applyMove(copyBoard, possibleMove)
-        val score = negaMax(copyBoard, depth=MAX_DEPTH, color)
-        Log.i("Game", "bestScore=$bestScore, $color pM=$possibleMove newScore=$score")
+        val score = negaMax(copyBoard, depth=MAX_DEPTH, color, possibleMove)
+        Log.i("Game", "fM=$possibleMove bestScore=$bestScore, $color newScore=$score")
         if (score > bestScore) {
             bestScore = score
             bestMove = possibleMove
-            Log.i("Game", "bestScore=$bestScore, $color pM=$possibleMove score=$score NEW BEST MOVE")
+            Log.i("Game", "fM=$possibleMove bestScore=$bestScore, $color score=$score NEW BEST MOVE")
         }
     }
     Log.i("Game", "bestMove=$bestMove, $color bestScore=$bestScore")
@@ -262,7 +262,8 @@ fun evaluateBoard(board: Array<Array<ChessCell>>, color:PieceColor): Int {
     var score = 0
     board.forEachIndexed { rowIndex, row ->
         row.forEachIndexed { colIndex, cell ->
-            val positionBonus = rowIndex + (4-Math.abs(4-colIndex))
+            var positionBonus = rowIndex + (4-Math.abs(4-colIndex))
+            positionBonus = 0
             score += when (cell.piece) {
                 ChessPiece.PAWN -> if (cell.color == color) (10 + positionBonus) else (-10 - positionBonus)
                 ChessPiece.KNIGHT, ChessPiece.BISHOP -> if (cell.color == color) 30 else -30
@@ -273,12 +274,9 @@ fun evaluateBoard(board: Array<Array<ChessCell>>, color:PieceColor): Int {
             }
         }
     }
-    Log.i("Game", "board=$board $color score=$score")
+    Log.i("Game", "evaluateBoard: $color score=$score")
     return score
 }
-
-
-
 
 
 
