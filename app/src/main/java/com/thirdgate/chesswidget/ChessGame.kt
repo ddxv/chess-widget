@@ -18,7 +18,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
-import androidx.glance.text.TextAlign
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -37,6 +36,7 @@ data class ChessCell(val piece: ChessPiece, val color: PieceColor, var hasMoved:
 
 // Top-level variable
 var currentPlayerColor: PieceColor = PieceColor.NONE
+var computerPlayerColor: PieceColor = PieceColor.NONE
 
 fun initialChessBoard(): Array<Array<ChessCell>> {
 
@@ -62,7 +62,7 @@ fun initialChessBoard(): Array<Array<ChessCell>> {
     }
 
     // 0,0 Top Left of board
-    board[0][0] = ChessCell(ChessPiece.KNIGHT, opponentColor)
+    board[0][0] = ChessCell(ChessPiece.ROOK, opponentColor)
     board[0][1] = ChessCell(ChessPiece.KNIGHT, opponentColor)
     board[0][2] = ChessCell(ChessPiece.BISHOP, opponentColor)
     board[0][queenCol] = ChessCell(ChessPiece.QUEEN, opponentColor)
@@ -95,6 +95,7 @@ fun initialChessBoard(): Array<Array<ChessCell>> {
 @Composable
 fun ChessGame(playerColor:PieceColor) {
     currentPlayerColor = playerColor
+    computerPlayerColor = if (playerColor == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
     val board = remember { mutableStateOf(initialChessBoard()) }
     val selectedCell = remember { mutableStateOf<Pair<Int, Int>?>(null) }
     val chessFont = FontFamily(
@@ -102,13 +103,15 @@ fun ChessGame(playerColor:PieceColor) {
     )
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(8.dp)) {
         var isGameOver = false
-        ChessBoard(board = board.value, selectedCell = selectedCell.value, chessFont=chessFont) { row, col ->
-            val currentSelected:Pair<Int,Int>?
-            if (!isGameOver)
-            {
-                currentSelected= selectedCell.value
-            }
-            else {
+        ChessBoard(
+            board = board.value,
+            selectedCell = selectedCell.value,
+            chessFont = chessFont
+        ) { row, col ->
+            val currentSelected: Pair<Int, Int>?
+            if (!isGameOver) {
+                currentSelected = selectedCell.value
+            } else {
                 currentSelected = null
             }
             if (currentSelected == null) {
@@ -134,11 +137,12 @@ fun ChessGame(playerColor:PieceColor) {
                     // Delay computer move
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(500)  // Wait for half a second
-                        val bestMove = bestMove(board.value, PieceColor.BLACK)
+                        val bestMove = calculateBestMove(board.value, computerPlayerColor)
                         if (bestMove != null) {
                             applyMove(board.value, bestMove)
                             val updatedBoard = board.value.deepCopy()  // Create a deep copy
-                            board.value = updatedBoard  // Assign the updated board to the state, triggering recomposition
+                            board.value =
+                                updatedBoard  // Assign the updated board to the state, triggering recomposition
                         }
                     }
                 } else {
@@ -153,17 +157,17 @@ fun ChessGame(playerColor:PieceColor) {
         if (isKingInCheck(board.value, PieceColor.WHITE)) {
             if (isCheckmate(board.value, PieceColor.WHITE)) {
                 Text("White is in checkmate!")
+                isGameOver = true
             } else {
                 Text("White is in check!")
             }
-            isGameOver = true
         } else if (isKingInCheck(board.value, PieceColor.BLACK)) {
             if (isCheckmate(board.value, PieceColor.BLACK)) {
                 Text("Black is in checkmate!")
+                isGameOver = true
             } else {
                 Text("Black is in check!")
             }
-            isGameOver = true
         }
 
         ResetButton {
@@ -174,40 +178,36 @@ fun ChessGame(playerColor:PieceColor) {
     }
 }
 
-const val MAX_DEPTH = 3 // You can adjust this value
+const val MAX_DEPTH = 0 // You can adjust this value
 
-fun minimax(board: Array<Array<ChessCell>>, depth: Int, isMaximizing: Boolean, alpha: Int, beta: Int, color: PieceColor): Int {
+fun negaMax(board: Array<Array<ChessCell>>, depth: Int, color: PieceColor): Int {
+//    if ( depth == 0 ) return evaluate();
+//    int max = -oo;
+//    for ( all moves)  {
+//        score = -negaMax( depth - 1 );
+//        if( score > max )
+//            max = score;
+//    }
+//    return max;
+
     if (depth == 0) {
-        return evaluateBoard(board)
+        return evaluateBoard(board, color)
     }
 
-    var bestScore: Int
-    var currentAlpha = alpha
-    var currentBeta = beta
-
-    if (isMaximizing) {
-        bestScore = Int.MIN_VALUE
-        for (move in generatePossibleMoves(board, color)) {
-            val copyBoard = board.deepCopy()
-            applyMove(copyBoard, move)
-            val score = minimax(copyBoard, depth - 1, false, currentAlpha, currentBeta, PieceColor.BLACK)
-            bestScore = maxOf(bestScore, score)
-            currentAlpha = maxOf(currentAlpha, score)
-            if (currentBeta <= currentAlpha) break
-        }
-    } else {
-        bestScore = Int.MAX_VALUE
-        for (move in generatePossibleMoves(board, color)) {
-            val copyBoard = board.deepCopy()
-            applyMove(copyBoard, move)
-            val score = minimax(copyBoard, depth - 1, true, currentAlpha, currentBeta, PieceColor.WHITE)
-            bestScore = minOf(bestScore, score)
-            currentBeta = minOf(currentBeta, score)
-            if (currentBeta <= currentAlpha) break
+    var max = Int.MIN_VALUE
+    for (move in generatePossibleMoves(board, color)) {
+        Log.i("Game", "NegaMax: move=$move")
+        val copyBoard = board.deepCopy()
+        applyMove(copyBoard, move)
+        val score = -negaMax(copyBoard, depth = depth - 1, color = color)
+        Log.i("Game", "NegaMax: move=$move score=$score")
+        if (score > max){
+            max = score
         }
     }
-    return bestScore
+    return max
 }
+
 
 fun isKingInCheck(board: Array<Array<ChessCell>>, color: PieceColor): Boolean {
     var kingRow = -1
@@ -225,20 +225,26 @@ fun isKingInCheck(board: Array<Array<ChessCell>>, color: PieceColor): Boolean {
     return isSquareAttacked(board, kingRow, kingCol, enemyColor)
 }
 
-fun bestMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+fun calculateBestMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
     var bestScore = Int.MIN_VALUE
-    var move: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
+    var bestMove: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
+
+    Log.i("Game", "bestScore=$bestScore, start $color")
 
     for (possibleMove in generatePossibleMoves(board, color)) {
+        Log.i("Game", "bestScore=$bestScore, $color pM=$possibleMove")
         val copyBoard = board.deepCopy()
         applyMove(copyBoard, possibleMove)
-        val score = minimax(copyBoard, MAX_DEPTH, false, Int.MIN_VALUE, Int.MAX_VALUE, PieceColor.BLACK)
+        val score = negaMax(copyBoard, depth=MAX_DEPTH, color)
+        Log.i("Game", "bestScore=$bestScore, $color pM=$possibleMove newScore=$score")
         if (score > bestScore) {
             bestScore = score
-            move = possibleMove
+            bestMove = possibleMove
+            Log.i("Game", "bestScore=$bestScore, $color pM=$possibleMove score=$score NEW BEST MOVE")
         }
     }
-    return move
+    Log.i("Game", "bestMove=$bestMove, $color bestScore=$bestScore")
+    return bestMove
 }
 
 fun applyMove(board: Array<Array<ChessCell>>, move: Pair<Pair<Int, Int>, Pair<Int, Int>>) {
@@ -251,21 +257,23 @@ fun Array<Array<ChessCell>>.deepCopy(): Array<Array<ChessCell>> {
     return Array(this.size) { this[it].clone() }
 }
 
-fun evaluateBoard(board: Array<Array<ChessCell>>): Int {
+fun evaluateBoard(board: Array<Array<ChessCell>>, color:PieceColor): Int {
     // This is a simple evaluator; you can enhance this for better evaluations.
     var score = 0
-    for (row in board) {
-        for (cell in row) {
+    board.forEachIndexed { rowIndex, row ->
+        row.forEachIndexed { colIndex, cell ->
+            val positionBonus = rowIndex + (4-Math.abs(4-colIndex))
             score += when (cell.piece) {
-                ChessPiece.PAWN -> if (cell.color == PieceColor.WHITE) 10 else -10
-                ChessPiece.KNIGHT, ChessPiece.BISHOP -> if (cell.color == PieceColor.WHITE) 30 else -30
-                ChessPiece.ROOK -> if (cell.color == PieceColor.WHITE) 50 else -50
-                ChessPiece.QUEEN -> if (cell.color == PieceColor.WHITE) 90 else -90
-                ChessPiece.KING -> if (cell.color == PieceColor.WHITE) 900 else -900
+                ChessPiece.PAWN -> if (cell.color == color) (10 + positionBonus) else (-10 - positionBonus)
+                ChessPiece.KNIGHT, ChessPiece.BISHOP -> if (cell.color == color) 30 else -30
+                ChessPiece.ROOK -> if (cell.color == color) 50 else -50
+                ChessPiece.QUEEN -> if (cell.color == color) 90 else -90
+                ChessPiece.KING -> if (cell.color == color) 900 else -900
                 else -> 0
             }
         }
     }
+    Log.i("Game", "board=$board $color score=$score")
     return score
 }
 
@@ -401,18 +409,18 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
                     } else if (fromRow == 1 && toRow - fromRow == 2 && board[toRow - 1][toCol].piece == ChessPiece.NONE) {
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.BLACK && toRow - fromRow == 1) { // Change here
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == enemyColor && toRow - fromRow == 1) { // Change here
                     return true
                 }
             // Pawn from bottom
-            } else if (color == currentPlayerColor) {
+            } else {
                 if (fromCol == toCol && board[toRow][toCol].piece == ChessPiece.NONE) {
                     if (toRow - fromRow == -1) { // Change here
                         return true
                     } else if (fromRow == 6 && toRow - fromRow == -2 && board[toRow + 1][toCol].piece == ChessPiece.NONE) {
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == PieceColor.WHITE && toRow - fromRow == -1) { // Change here
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == enemyColor && toRow - fromRow == -1) { // Change here
                     return true
                 }
             }
@@ -510,7 +518,7 @@ fun isSquareAttacked(board: Array<Array<ChessCell>>, row: Int, col: Int, byColor
             if (board[fromRow][fromCol].color == byColor) {
                 // Pretend to make the move
                 if (isValidMove(board, fromRow, fromCol, row, col)) {
-                    Log.i("Game","isSquareAttacked: True $fromRow,$fromCol")
+                    //Log.i("Game", "isSquareAttacked row,col is attacked by $fromRow,$fromCol")
                     return true
                 }
             }
