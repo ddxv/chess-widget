@@ -75,9 +75,17 @@ fun ChessGame() {
     val chessFont = FontFamily(
         Font(R.font.chessalpha) // Replace `chess_font_name` with the name of your font file (without the extension).
     )
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(8.dp)) {
+        var isGameOver = false
         ChessBoard(board = board.value, selectedCell = selectedCell.value, chessFont=chessFont) { row, col ->
-            val currentSelected = selectedCell.value
+            val currentSelected:Pair<Int,Int>?
+            if (!isGameOver)
+            {
+                currentSelected= selectedCell.value
+            }
+            else {
+                currentSelected = null
+            }
             if (currentSelected == null) {
                 selectedCell.value = Pair(row, col)
             } else {
@@ -123,12 +131,14 @@ fun ChessGame() {
             } else {
                 Text("White is in check!")
             }
+            isGameOver = true
         } else if (isKingInCheck(board.value, PlayerColor.BLACK)) {
             if (isCheckmate(board.value, PlayerColor.BLACK)) {
                 Text("Black is in checkmate!")
             } else {
                 Text("Black is in check!")
             }
+            isGameOver = true
         }
 
         ResetButton {
@@ -268,7 +278,7 @@ fun ChessBoard(board: Array<Array<ChessCell>>, selectedCell: Pair<Int, Int>?, ch
                             .weight(1f)
                             .aspectRatio(1f)
                             .background(
-                                if (isLightSquare) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.primary
+                                if (isLightSquare) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary
                             )
                             .border(2.dp, if (selectedCell == Pair(rowIndex, colIndex)) Color.Red else Color.Transparent)
                             .clickable { onCellClick(rowIndex, colIndex) },
