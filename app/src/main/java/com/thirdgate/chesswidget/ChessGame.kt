@@ -22,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 enum class ChessPiece(val charRepresentation: Char) {
     KING('l'), QUEEN('w'), ROOK('t'), BISHOP('n'), KNIGHT('j'), PAWN('o'), NONE('.')
@@ -63,31 +64,33 @@ fun initialChessBoard(): Array<Array<ChessCell>> {
 
     // 0,0 Top Left of board
     board[0][0] = ChessCell(ChessPiece.ROOK, opponentColor)
-    board[0][1] = ChessCell(ChessPiece.KNIGHT, opponentColor)
-    board[0][2] = ChessCell(ChessPiece.BISHOP, opponentColor)
-    board[0][queenCol] = ChessCell(ChessPiece.QUEEN, opponentColor)
-    board[0][kingCol] = ChessCell(ChessPiece.KING, opponentColor)
-    board[0][5] = ChessCell(ChessPiece.BISHOP, opponentColor)
-    board[0][6] = ChessCell(ChessPiece.KNIGHT, opponentColor)
-    board[0][7] = ChessCell(ChessPiece.ROOK, opponentColor)
+//    board[0][1] = ChessCell(ChessPiece.KNIGHT, opponentColor)
+//    board[0][2] = ChessCell(ChessPiece.BISHOP, opponentColor)
+//    board[0][queenCol] = ChessCell(ChessPiece.QUEEN, opponentColor)
+//    board[0][kingCol] = ChessCell(ChessPiece.KING, opponentColor)
+//    board[0][5] = ChessCell(ChessPiece.BISHOP, opponentColor)
+//    board[0][6] = ChessCell(ChessPiece.KNIGHT, opponentColor)
+//    board[0][7] = ChessCell(ChessPiece.ROOK, opponentColor)
     // White pawns 1
-    for (i in 0..7) {
+    for (i in 0..0) {
         board[1][i] = ChessCell(ChessPiece.PAWN, opponentColor)
     }
 
-    // Black pawns 6
-    for (i in 0..7) {
-        board[6][i] = ChessCell(ChessPiece.PAWN, currentPlayerColor)
-    }
-    // Black 7
-    board[7][0] = ChessCell(ChessPiece.ROOK, currentPlayerColor)
-    board[7][1] = ChessCell(ChessPiece.KNIGHT, currentPlayerColor)
-    board[7][2] = ChessCell(ChessPiece.BISHOP, currentPlayerColor)
-    board[7][queenCol] = ChessCell(ChessPiece.QUEEN, currentPlayerColor)
-    board[7][kingCol] = ChessCell(ChessPiece.KING, currentPlayerColor)
-    board[7][5] = ChessCell(ChessPiece.BISHOP, currentPlayerColor)
-    board[7][6] = ChessCell(ChessPiece.KNIGHT, currentPlayerColor)
-    board[7][7] = ChessCell(ChessPiece.ROOK, currentPlayerColor)
+    // Human Player pawns 6
+//    for (i in 0..7) {
+//        board[6][i] = ChessCell(ChessPiece.PAWN, currentPlayerColor)
+//    }
+    // Human Player 7
+    board[4][5] = ChessCell(ChessPiece.PAWN, currentPlayerColor)
+    board[4][6] = ChessCell(ChessPiece.PAWN, currentPlayerColor)
+//    board[7][0] = ChessCell(ChessPiece.ROOK, currentPlayerColor)
+//    board[7][1] = ChessCell(ChessPiece.KNIGHT, currentPlayerColor)
+//    board[7][2] = ChessCell(ChessPiece.BISHOP, currentPlayerColor)
+//    board[7][queenCol] = ChessCell(ChessPiece.QUEEN, currentPlayerColor)
+//    board[7][kingCol] = ChessCell(ChessPiece.KING, currentPlayerColor)
+//    board[7][5] = ChessCell(ChessPiece.BISHOP, currentPlayerColor)
+//    board[7][6] = ChessCell(ChessPiece.KNIGHT, currentPlayerColor)
+//    board[7][7] = ChessCell(ChessPiece.ROOK, currentPlayerColor)
 
     return board
 }
@@ -137,7 +140,8 @@ fun ChessGame(playerColor:PieceColor) {
                     // Delay computer move
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(500)  // Wait for half a second
-                        val bestMove = calculateBestMove(board.value, computerPlayerColor)
+                        val bestMove = AlphaBetaPlayer().decideMove(board.value, computerPlayerColor)
+                        //val bestMove = calculateBestMove(board.value, computerPlayerColor)
                         if (bestMove != null) {
                             applyMove(board.value, bestMove)
                             val updatedBoard = board.value.deepCopy()  // Create a deep copy
@@ -178,36 +182,59 @@ fun ChessGame(playerColor:PieceColor) {
     }
 }
 
+
+
 const val MAX_DEPTH = 2 // You can adjust this value
 
-fun negaMax(board: Array<Array<ChessCell>>, depth: Int, color: PieceColor, firstMove:Pair<Pair<Int, Int>, Pair<Int, Int>>): Int {
-//    if ( depth == 0 ) return evaluate();
-//    int max = -oo;
-//    for ( all moves)  {
-//        score = -negaMax( depth - 1 );
-//        if( score > max )
-//            max = score;
-//    }
-//    return max;
+fun calculateBestMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+    var bestScore = Int.MIN_VALUE
+    var bestMove: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
 
+    Log.i("Game", "bestScore=$bestScore, start $color")
+    for (possibleMove in generatePossibleMoves(board, color)) {
+        Log.i("Game", "M=$possibleMove bestScore=$bestScore, $color")
+        val copyBoard = board.deepCopy()
+        applyMove(copyBoard, possibleMove)
+        val score = negaMax(copyBoard, depth=MAX_DEPTH, color, mutableListOf(possibleMove))
+        Log.w("Game", "M=$possibleMove $color finalScore=$score")
+        if (score > bestScore) {
+            bestScore = score
+            bestMove = possibleMove
+            Log.e("Game", "fM=$possibleMove bestScore=$bestScore, $color score=$score NEW BEST MOVE")
+        }
+    }
+    Log.i("Game", "bestMove=$bestMove, $color bestScore=$bestScore")
+    return bestMove
+}
+
+
+typealias Move = Pair<Int, Int>
+typealias MovePair = Pair<Move, Move>
+typealias MovesList = MutableList<MovePair>
+
+fun negaMax(board: Array<Array<ChessCell>>, depth: Int, color: PieceColor, firstMove:MovesList): Int {
+    Log.i("Game", "M=$firstMove $color d=$depth start")
     if (depth == 0) {
-        return evaluateBoard(board, color)
+        val score = evaluateBoard(board, color)
+        Log.i("Game","M=$firstMove $color d=$depth finalScore=$score")
+        return score
     }
 
     var max = Int.MIN_VALUE
-    for (move in generatePossibleMoves(board, color)) {
-        Log.i("Game", "fM=$firstMove NegaMax: move=$move")
+    val nextColor = if (color == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
+    for (move in generatePossibleMoves(board, nextColor)) {
+        val logMove = firstMove.toMutableList().apply { add(move) }
         val copyBoard = board.deepCopy()
         applyMove(copyBoard, move)
-        val nextColor = if (color == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
-        val score = -negaMax(copyBoard, depth = depth - 1, color = nextColor, firstMove)
-        Log.i("Game", "fM=$firstMove NegaMax: move=$move score=$score")
+        val score = -negaMax(copyBoard, depth = depth - 1, color = nextColor, logMove)
         if (score > max) {
+            Log.i("Game", "M=$logMove $color d=$depth score=$score NEW NM HIGH")
             max = score
         }
     }
     return max
 }
+
 
 
 fun isKingInCheck(board: Array<Array<ChessCell>>, color: PieceColor): Boolean {
@@ -226,26 +253,6 @@ fun isKingInCheck(board: Array<Array<ChessCell>>, color: PieceColor): Boolean {
     return isSquareAttacked(board, kingRow, kingCol, enemyColor)
 }
 
-fun calculateBestMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
-    var bestScore = Int.MIN_VALUE
-    var bestMove: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
-
-    Log.i("Game", "bestScore=$bestScore, start $color")
-    for (possibleMove in generatePossibleMoves(board, color)) {
-        Log.i("Game", "fM=$possibleMove bestScore=$bestScore, $color")
-        val copyBoard = board.deepCopy()
-        applyMove(copyBoard, possibleMove)
-        val score = negaMax(copyBoard, depth=MAX_DEPTH, color, possibleMove)
-        Log.i("Game", "fM=$possibleMove bestScore=$bestScore, $color newScore=$score")
-        if (score > bestScore) {
-            bestScore = score
-            bestMove = possibleMove
-            Log.i("Game", "fM=$possibleMove bestScore=$bestScore, $color score=$score NEW BEST MOVE")
-        }
-    }
-    Log.i("Game", "bestMove=$bestMove, $color bestScore=$bestScore")
-    return bestMove
-}
 
 fun applyMove(board: Array<Array<ChessCell>>, move: Pair<Pair<Int, Int>, Pair<Int, Int>>) {
     val (from, to) = move
@@ -262,19 +269,27 @@ fun evaluateBoard(board: Array<Array<ChessCell>>, color:PieceColor): Int {
     var score = 0
     board.forEachIndexed { rowIndex, row ->
         row.forEachIndexed { colIndex, cell ->
-            var positionBonus = rowIndex + (4-Math.abs(4-colIndex))
-            positionBonus = 0
+
+            val colScore = 5 - abs(4-colIndex).coerceAtLeast(abs(3-colIndex))
+            //5-(4-6) = 2
+            //5-(4-1) = 3
+            var rowScore = if (cell.color == currentPlayerColor) 7-rowIndex else rowIndex
+            var centerBonus = rowScore * colScore
+            centerBonus = 0
+
             score += when (cell.piece) {
-                ChessPiece.PAWN -> if (cell.color == color) (10 + positionBonus) else (-10 - positionBonus)
-                ChessPiece.KNIGHT, ChessPiece.BISHOP -> if (cell.color == color) 30 else -30
-                ChessPiece.ROOK -> if (cell.color == color) 50 else -50
-                ChessPiece.QUEEN -> if (cell.color == color) 90 else -90
-                ChessPiece.KING -> if (cell.color == color) 900 else -900
+                ChessPiece.PAWN -> {if (cell.color == computerPlayerColor) 10 else -10
+                    //Log.i("Game", "evalBoard: ${cell.color} $rowIndex,$colIndex rowScore=$rowScore colScore=$colScore centerScore=$centerBonus pawnScore=$pawnScore")
+                }
+                ChessPiece.KNIGHT, ChessPiece.BISHOP -> if (cell.color == computerPlayerColor) 30 else -30
+                ChessPiece.ROOK -> if (cell.color == computerPlayerColor) 50 else -50
+                ChessPiece.QUEEN -> if (cell.color == computerPlayerColor) 90 else -90
+                ChessPiece.KING -> if (cell.color ==computerPlayerColor) 900 else -900
                 else -> 0
             }
         }
     }
-    Log.i("Game", "evaluateBoard: $color score=$score")
+    Log.i("Game", "evalBoard: $color score=$score")
     return score
 }
 
@@ -528,5 +543,101 @@ fun isSquareAttacked(board: Array<Array<ChessCell>>, row: Int, col: Int, byColor
 @Composable
 fun ResetButton(onClick: () -> Unit) {
     androidx.compose.material3.Button(onClick = onClick) { Text("Reset")
+    }
+}
+
+
+class AlphaBetaPlayer() {
+    private var currentDepth = 0
+    private var bestMove: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
+    private var globalBestMove: Pair<Pair<Int, Int>, Pair<Int, Int>>? = null
+    private var start: Long = 0
+    private var timeout = false
+    fun decideMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+        timeout = false
+        start = System.currentTimeMillis()
+        var d = 0
+        while (true) {
+            if (d > 0) {
+                globalBestMove = bestMove
+                println("Completed search with depth $currentDepth. Best move so far: $globalBestMove")
+            }
+            currentDepth = INITIAL_DEPTH + d
+            val moveLog:MovesList = mutableListOf()
+            maximizer(board, color, currentDepth, Int.MIN_VALUE, Int.MAX_VALUE, firstMove = moveLog)
+            if (timeout) {
+                if (globalBestMove != null) {
+                    return globalBestMove
+                }
+            }
+            d++
+        }
+    }
+
+    private fun maximizer(board: Array<Array<ChessCell>>, color:PieceColor, depth: Int, alpha: Int, beta: Int, firstMove:MovesList?): Int {
+        var alpha = alpha
+        if (System.currentTimeMillis() - start > TIMEOUT_MILISECONDS) {
+            timeout = true
+            return alpha
+        }
+        if (depth == 0) {
+            val score = evaluateBoard(board, color)
+            Log.i("Game", "M=$firstMove $color d=$depth max-finalScore=$score")
+            return score
+        }
+
+        var logMove: MovesList
+        for (move in generatePossibleMoves(board, color)) {
+            if (firstMove != null) {logMove = firstMove.toMutableList().apply { add(move) }}
+            else {logMove =  mutableListOf(move)}
+            val copyBoard = board.deepCopy()
+            applyMove(copyBoard, move)
+            var nextColor = if (color == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
+            val rating = minimizer(copyBoard, nextColor, depth - 1, alpha, beta, logMove)
+            Log.i("Game", "minimizer returned rating=$rating")
+            //nextColor = if (color == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
+            if (rating > alpha) {
+                alpha = rating
+                Log.i("Game", "minimizer returned rating=$rating check d")
+                if (depth == currentDepth) {
+                    Log.i("Game", "minimizer returned rating=$rating NEW BEST!")
+                    bestMove = move
+                }
+            }
+            if (alpha >= beta) {
+                return alpha
+            }
+        }
+        return alpha
+    }
+
+    private fun minimizer(board: Array<Array<ChessCell>>, color:PieceColor, depth: Int, alpha: Int, beta: Int, firstMove:MovesList): Int {
+        var beta = beta
+        if (depth == 0) {
+            val score = evaluateBoard(board, color)
+            Log.i("Game","M=$firstMove $color d=$depth min-finalScore=$score")
+            return score
+        }
+        var nextColor = if (color == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
+        for (move in generatePossibleMoves(board, color)) {
+                val logMove = firstMove.toMutableList().apply { add(move) }
+                val copyBoard = board.deepCopy()
+                applyMove(copyBoard, move)
+                val rating = maximizer(copyBoard, nextColor,depth - 1, alpha, beta, logMove)
+                Log.i("game", "Nested Maximizer returned rating=$rating")
+                if (rating <= beta) {
+                    beta = rating
+                }
+                if (alpha >= beta) {
+                    Log.i("Game","Nested Maximizer returned rating=$rating returning beta$beta")
+                    return beta
+                }
+            }
+        return beta
+    }
+
+    companion object {
+        private const val INITIAL_DEPTH = 3
+        private const val TIMEOUT_MILISECONDS = 6000
     }
 }
