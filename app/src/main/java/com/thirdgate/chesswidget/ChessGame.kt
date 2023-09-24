@@ -63,7 +63,7 @@ fun initialChessBoard(): Array<Array<ChessCell>> {
     }
 
     // 0,0 Top Left of board
-    board[0][0] = ChessCell(ChessPiece.ROOK, opponentColor)
+    //board[0][0] = ChessCell(ChessPiece.ROOK, opponentColor)
 //    board[0][1] = ChessCell(ChessPiece.KNIGHT, opponentColor)
 //    board[0][2] = ChessCell(ChessPiece.BISHOP, opponentColor)
 //    board[0][queenCol] = ChessCell(ChessPiece.QUEEN, opponentColor)
@@ -140,8 +140,8 @@ fun ChessGame(playerColor:PieceColor) {
                     // Delay computer move
                     CoroutineScope(Dispatchers.Main).launch {
                         delay(500)  // Wait for half a second
-                        val bestMove = AlphaBetaPlayer().decideMove(board.value, computerPlayerColor)
-                        //val bestMove = calculateBestMove(board.value, computerPlayerColor)
+                        //val bestMove = AlphaBetaPlayer().decideMove(board.value, computerPlayerColor)
+                        val bestMove = calculateBestMove(board.value, computerPlayerColor)
                         if (bestMove != null) {
                             applyMove(board.value, bestMove)
                             val updatedBoard = board.value.deepCopy()  // Create a deep copy
@@ -184,7 +184,7 @@ fun ChessGame(playerColor:PieceColor) {
 
 
 
-const val MAX_DEPTH = 2 // You can adjust this value
+const val MAX_DEPTH = 3 // You can adjust this value
 
 fun calculateBestMove(board: Array<Array<ChessCell>>, color: PieceColor): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
     var bestScore = Int.MIN_VALUE
@@ -417,23 +417,29 @@ fun isValidMove(board: Array<Array<ChessCell>>, fromRow: Int, fromCol: Int, toRo
             // Pawn from top
             if (color != currentPlayerColor) {
                 if (fromCol == toCol && board[toRow][toCol].piece == ChessPiece.NONE) {
-                    if (toRow - fromRow == 1) { // Change here
+                    if (toRow - fromRow == 1) { // regular advance down
+                        if (toRow == 7) { // reached end of row
+                            board[fromRow][fromCol] = ChessCell(ChessPiece.QUEEN, color, hasMoved = true)
+                        }
                         return true
-                    } else if (fromRow == 1 && toRow - fromRow == 2 && board[toRow - 1][toCol].piece == ChessPiece.NONE) {
+                    } else if (fromRow == 1 && toRow - fromRow == 2 && board[toRow - 1][toCol].piece == ChessPiece.NONE) { // First move +2
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == enemyColor && toRow - fromRow == 1) { // Change here
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == enemyColor && toRow - fromRow == 1) { //Attack
                     return true
                 }
             // Pawn from bottom
             } else {
                 if (fromCol == toCol && board[toRow][toCol].piece == ChessPiece.NONE) {
-                    if (toRow - fromRow == -1) { // Change here
+                    if (toRow - fromRow == -1) { // Regular Advance Up
+                        if (toRow == 0) { // reached end of rows
+                            board[fromRow][fromCol] = ChessCell(ChessPiece.QUEEN, color, hasMoved = true)
+                        }
                         return true
-                    } else if (fromRow == 6 && toRow - fromRow == -2 && board[toRow + 1][toCol].piece == ChessPiece.NONE) {
+                    } else if (fromRow == 6 && toRow - fromRow == -2 && board[toRow + 1][toCol].piece == ChessPiece.NONE) { // Initial first move
                         return true
                     }
-                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == enemyColor && toRow - fromRow == -1) { // Change here
+                } else if (Math.abs(fromCol - toCol) == 1 && board[toRow][toCol].color == enemyColor && toRow - fromRow == -1) { // Regular attack
                     return true
                 }
             }
